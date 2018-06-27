@@ -60,6 +60,16 @@ variable "private_subnets" {
   default     = ["10.1.128.0/20"]
 }
 
+variable "ssh_key_name" {
+  description = "SSH key name to use for any launched instances"
+  default     = ""
+}
+
+variable "nat_instance_type" {
+  description = "The AWS instance type to use for NAT (only if using nat instances)"
+  default     = "t2.nano"
+}
+
 locals {
   common_tags = {
     "gravitational.io/name" = "${var.name}"
@@ -83,7 +93,7 @@ resource "aws_vpc" "main" {
 // Subnets
 //
 resource "aws_subnet" "public" {
-  count = "${length(var.internal_subnets)}"
+  count = "${length(var.public_subnets)}"
 
   vpc_id                  = "${aws_vpc.main.id}"
   cidr_block              = "${element(var.public_subnets, count.index)}"
@@ -94,7 +104,7 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
-  count = "${length(var.external_subnets)}"
+  count = "${length(var.private_subnets)}"
 
   vpc_id            = "${aws_vpc.main.id}"
   cidr_block        = "${element(var.private_subnets, count.index)}"
@@ -116,7 +126,7 @@ resource "aws_internet_gateway" "main" {
 resource "aws_nat_gateway" "main" {
   count         = "${(1 - var.enable_nat_gateway) * length(var.availability_zones)}"
   allocation_id = "${element(aws_eip.nat.*.id, count.index)}"
-  subnet_id     = "${element(aws_subnet.external.*.id, count.index)}"
+  subnet_id     = "${element(aws_subnet.public.*.id, count.index)}"
   depends_on    = ["aws_internet_gateway.main"]
 
   tags = "${merge(local.common_tags, var.tags)}"
@@ -127,15 +137,9 @@ resource "aws_instance" "nat" {
   count             = "${(0 + var.enable_nat_instance) * length(var.availability_zones)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
-  tags {
-    Name        = "${var.name}-nat-${var.availability_zones[count.index]}"
-    Environment = "${var.environment}"
-  }
+  tags = "${merge(local.common_tags, var.tags)}"
 
-  volume_tags {
-    Name        = "${var.name}-nat-${var.availability_zones[count.index]}"
-    Environment = "${var.environment}"
-  }
+  volume_tags = "${merge(local.common_tags, var.tags)}"
 
   key_name          = "${var.nat_instance_ssh_key_name}"
   ami               = "${data.aws_ami.nat_ami.id}"
@@ -153,6 +157,15 @@ resource "aws_instance" "nat" {
 }
 
 //
+// Elastic IPs
+//
+resource "aws_eip" "nat" {
+  count = "${var.enable_nat_gateway * length(var.availability_zones)}"
+
+  vpc = true
+}
+
+//
 // Route Tables
 // 
 resource "aws_route_table" "public" {
@@ -162,7 +175,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  count  = "${length(var.internal_subnets)}"
+  count  = "${length(var.private_subnets)}"
   vpc_id = "${aws_vpc.main.id}"
 
   tags = "${merge(local.common_tags, var.tags)}"
@@ -179,7 +192,7 @@ resource "aws_route" "via_nat_gateway" {
 }
 
 resource "aws_route" "via_nat_instance" {
-  count                  = "${(0 + var.enable_nat_instances) * length(compact(var.private_subnets))}"
+  count                  = "${(0 + var.enable_nat_instance) * length(compact(var.private_subnets))}"
   route_table_id         = "${element(aws_route_table.private.*.id, count.index)}"
   destination_cidr_block = "0.0.0.0/0"
   instance_id            = "${element(aws_instance.nat.*.id, count.index)}"
@@ -205,7 +218,7 @@ resource "aws_route_table_association" "public" {
 //
 resource "aws_security_group" "nat_instances" {
   # Use NAT instances (cheaper) instead of NAT gateways
-  count       = "${0 + var.use_nat_instances}"
+  count       = "${0 + var.enable_nat_instance}"
   name        = "nat"
   description = "Allow traffic from clients into NAT instances"
 
@@ -213,14 +226,14 @@ resource "aws_security_group" "nat_instances" {
     from_port   = 0
     to_port     = 65535
     protocol    = "udp"
-    cidr_blocks = "${var.subnets}"
+    cidr_blocks = "${var.private_subnets}"
   }
 
   ingress {
     from_port   = 0
     to_port     = 65535
     protocol    = "tcp"
-    cidr_blocks = "${var.subnets}"
+    cidr_blocks = "${var.private_subnets}"
   }
 
   egress {
@@ -248,11 +261,11 @@ output "cidr_block" {
 }
 
 output "public_subnets" {
-  value = ["${aws_subnet.external.*.id}"]
+  value = ["${aws_subnet.public.*.id}"]
 }
 
 output "private_subnets" {
-  value = ["${aws_subnet.internal.*.id}"]
+  value = ["${aws_subnet.private.*.id}"]
 }
 
 output "security_group" {
@@ -264,9 +277,9 @@ output "availability_zones" {
 }
 
 output "public_route_table" {
-  value = "${aws_route_table.public.id}"
+  value = ["${aws_route_table.public.*.id}"]
 }
 
 output "private_route_table" {
-  value = "${aws_route_table.private.id}"
+  value = ["${aws_route_table.private.*.id}"]
 }

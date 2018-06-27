@@ -141,7 +141,7 @@ resource "aws_instance" "nat" {
 
   volume_tags = "${merge(local.common_tags, var.tags)}"
 
-  key_name          = "${var.nat_instance_ssh_key_name}"
+  key_name          = "${var.ssh_key_name}"
   ami               = "${data.aws_ami.nat_ami.id}"
   instance_type     = "${var.nat_instance_type}"
   source_dest_check = false
@@ -245,6 +245,24 @@ resource "aws_security_group" "nat_instances" {
 
   vpc_id = "${aws_vpc.main.id}"
   tags   = "${merge(local.common_tags, var.tags)}"
+}
+
+//
+// AMIs
+//
+
+data "aws_ami" "nat_ami" {
+  most_recent = true
+
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
+
+  filter {
+    name   = "name"
+    values = ["amzn-ami-vpc-nat*"]
+  }
 }
 
 //

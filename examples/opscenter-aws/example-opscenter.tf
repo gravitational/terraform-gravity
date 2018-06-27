@@ -11,3 +11,7 @@ module "vpc" {
     "gravitational.io/user" = "kevin"
   }
 }
+
+provider "aws" {
+  region = "us-east-1"
+}

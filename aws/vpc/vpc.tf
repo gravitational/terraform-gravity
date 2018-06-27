@@ -124,7 +124,7 @@ resource "aws_internet_gateway" "main" {
 }
 
 resource "aws_nat_gateway" "main" {
-  count         = "${(1 - var.enable_nat_gateway) * length(var.availability_zones)}"
+  count         = "${(0 + var.enable_nat_gateway) * length(var.availability_zones)}"
   allocation_id = "${element(aws_eip.nat.*.id, count.index)}"
   subnet_id     = "${element(aws_subnet.public.*.id, count.index)}"
   depends_on    = ["aws_internet_gateway.main"]

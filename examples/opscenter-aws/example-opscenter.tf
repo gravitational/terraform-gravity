@@ -7,7 +7,7 @@ module "vpc" {
 
   tags = {
     "gravitational.io/vpc"  = ""
-    description             = "Example VPC"
+    description             = "Example Terraform VPC"
     "gravitational.io/user" = "kevin"
   }
 }

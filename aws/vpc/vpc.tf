@@ -4,6 +4,7 @@ variable name {
 
 variable "cidr" {
   description = "The CIDR block for the VPC."
+  default     = "10.1.0.0/16"
 }
 
 variable "tags" {
@@ -36,7 +37,7 @@ variable "enable_nat_gateway" {
   default     = false
 }
 
-variable "enable_internet_gateway" {
+variable "enable_internet" {
   description = "Enable provisioning internet gateway (can be disabled to completely isolate internet access)"
   default     = true
 }
@@ -44,16 +45,19 @@ variable "enable_internet_gateway" {
 variable "availability_zones" {
   description = "List of availability zones to install subnets in"
   type        = "list"
+  default     = "us-east-2b"
 }
 
 variable "public_subnets" {
   description = "List of subnets that can be assigned public IPs"
   type        = "list"
+  default     = "10.1.0.0/24"
 }
 
 variable "private_subnets" {
   description = "List of subnets that can only be used privately (but can reach internet via NAT)"
   type        = "list"
+  default     = ["10.1.128.0/20"]
 }
 
 locals {
@@ -103,7 +107,7 @@ resource "aws_subnet" "private" {
 // Gateways
 //
 resource "aws_internet_gateway" "main" {
-  count  = "${0 + var.enable_internet_gateway}"
+  count  = "${0 + var.enable_internet}"
   vpc_id = "${aws_vpc.main.id}"
 
   tags = "${merge(local.common_tags, var.tags)}"

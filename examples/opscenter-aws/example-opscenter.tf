@@ -1,6 +1,6 @@
 // Create a new VPC for the ops center cluster
 module "vpc" {
-  source              = "github.com/gravitational/terraform-gravity//aws/vpc"
+  source              = "github.com/gravitational/terraform-gravity//aws/vpc?ref=6b268428e8121aaabab1a18a021b59638feeacb2"
   name                = "example.gravitational.io"
   enable_internet     = true
   enable_nat_instance = true

@@ -45,7 +45,7 @@ variable "enable_internet" {
 variable "availability_zones" {
   description = "List of availability zones to install subnets in"
   type        = "list"
-  default     = ["us-east-2b"]
+  default     = ["us-east-1b"]
 }
 
 variable "public_subnets" {

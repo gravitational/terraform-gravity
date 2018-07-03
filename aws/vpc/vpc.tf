@@ -72,7 +72,7 @@ variable "nat_instance_type" {
 
 locals {
   common_tags = {
-    "gravitational.io/name" = "${var.name}"
+    "Name" = "${var.name}"
   }
 }
 

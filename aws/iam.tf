@@ -23,6 +23,7 @@ resource "aws_iam_role_policy" "master" {
   name = "${var.name}-master"
   role = "${aws_iam_role.master.id}"
 
+  //TODO(knisbet) make sure s3 bucket permissions are optional / uses dl_url to get the specific object
   policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -40,6 +41,37 @@ resource "aws_iam_role_policy" "master" {
             "Effect": "Allow",
             "Action": [
                 "elasticloadbalancing:*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "autoscaling:DescribeAutoScalingInstances",
+                "autoscaling:DescribeAutoScalingGroups"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::knisbet-test/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:ListHostedZonesByName",
+                "route53:ChangeResourceRecordSets",
+                "route53:GetChange"
             ],
             "Resource": [
                 "*"
@@ -98,8 +130,8 @@ resource "aws_iam_role_policy" "master_lifecycle_hooks" {
 EOF
 }
 
-resource "aws_iam_role" "node" {
-  name = "${var.name}-node"
+resource "aws_iam_role" "worker" {
+  name = "${var.name}-worker"
 
   assume_role_policy = <<EOF
 {
@@ -115,9 +147,9 @@ resource "aws_iam_role" "node" {
 EOF
 }
 
-resource "aws_iam_role_policy" "node" {
-  name = "${var.name}-node"
-  role = "${aws_iam_role.node.id}"
+resource "aws_iam_role_policy" "worker" {
+  name = "${var.name}-worker"
+  role = "${aws_iam_role.worker.id}"
 
   policy = <<EOF
 {
@@ -128,7 +160,8 @@ resource "aws_iam_role_policy" "node" {
             "Action": [
                 "ec2:Describe*",
                 "ec2:AttachVolume",
-                "ec2:DetachVolume"
+                "ec2:DetachVolume",
+                "ec2:ModifyNetworkInterfaceAttribute"
             ],
             "Resource": "*"
         },
@@ -174,9 +207,9 @@ resource "aws_iam_role_policy" "node" {
 EOF
 }
 
-resource "aws_iam_role_policy" "node_ssm" {
-  name = "${var.name}-node-ssm"
-  role = "${aws_iam_role.node.id}"
+resource "aws_iam_role_policy" "worker_ssm" {
+  name = "${var.name}-worker-ssm"
+  role = "${aws_iam_role.worker.id}"
 
   policy = <<EOF
 {

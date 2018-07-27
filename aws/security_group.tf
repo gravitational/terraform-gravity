@@ -1,7 +1,7 @@
 resource "aws_security_group" "kubernetes" {
   name   = "${var.name}"
   vpc_id = "${var.vpc_id}"
-  tags   = "${merge(local.common_tags, map())}"
+  tags   = "${merge(local.common_tags, var.tags)}"
 }
 
 resource "aws_security_group_rule" "ingress_allow_ssh" {

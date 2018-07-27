@@ -8,7 +8,7 @@ variable "cidr" {
 }
 
 variable "tags" {
-  description = "Tags to add to the AWS resources"
+  description = "User tags to add to the created AWS resources"
   type        = "map"
 }
 
@@ -49,13 +49,13 @@ variable "availability_zones" {
 }
 
 variable "public_subnets" {
-  description = "List of subnets that can be assigned public IPs"
+  description = "List of subnets to be created that can be assigned public IPs"
   type        = "list"
   default     = ["10.1.0.0/24"]
 }
 
 variable "private_subnets" {
-  description = "List of subnets that can only be used privately (but can reach internet via NAT)"
+  description = "List of subnets to be created that can only be used privately (but can reach internet via NAT)"
   type        = "list"
   default     = ["10.1.128.0/20"]
 }
@@ -198,6 +198,12 @@ resource "aws_route" "via_nat_instance" {
   instance_id            = "${element(aws_instance.nat.*.id, count.index)}"
 }
 
+resource "aws_route" "internet" {
+  route_table_id         = "${aws_route_table.public.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "${aws_internet_gateway.main.id}"
+}
+
 //
 // Route Associations
 //
@@ -234,6 +240,15 @@ resource "aws_security_group" "nat_instances" {
     to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = "${var.private_subnets}"
+  }
+
+  # Allow SSH to NAT instance to be used as a jump host
+  # TODO(knisbet) make this optional
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -300,4 +315,8 @@ output "public_route_table" {
 
 output "private_route_table" {
   value = ["${aws_route_table.private.*.id}"]
+}
+
+output "internet_gateway" {
+  value = "${element(aws_internet_gateway.main.*.id, 0)}"
 }

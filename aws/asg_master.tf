@@ -2,7 +2,9 @@
 // Autoscaling group
 //
 resource "aws_autoscaling_group" "master" {
-  name_prefix               = "${var.name}-master-asg-"
+  name_prefix = "${var.name}-master-"
+
+  # TODO(knisbet) hard code this to a fixed size set of masters
   max_size                  = "5"
   min_size                  = "0"
   health_check_grace_period = 300
@@ -10,7 +12,8 @@ resource "aws_autoscaling_group" "master" {
   desired_capacity          = "${var.master_count}"
   force_delete              = false
   launch_configuration      = "${aws_launch_configuration.master.name}"
-  vpc_zone_identifier       = ["${var.aws_subnet_ids}"]
+  vpc_zone_identifier       = ["${aws_subnet.k8s.*.id}"]
+  default_cooldown          = 30
 
   // external autoscale algos can modify these values,
   // so ignore changes to them
@@ -18,17 +21,10 @@ resource "aws_autoscaling_group" "master" {
     ignore_changes        = ["desired_capacity", "max_size", "min_size"]
     create_before_destroy = true
   }
-}
 
-//
-// Launch script
-//
-data "template_file" "master_user_data" {
-  template = "${file("${path.module}/cloud-init.master.tpl")}"
+  tags = ["${local.asg_tags}"]
 
-  vars {
-    cluster_name = "${var.name}"
-  }
+  depends_on = ["aws_launch_configuration.master"]
 }
 
 //
@@ -38,10 +34,10 @@ resource "aws_launch_configuration" "master" {
   name_prefix                 = "${var.name}-lc-master-"
   image_id                    = "${var.master_ami}"
   instance_type               = "${var.master_instance_type}"
-  user_data                   = "${data.template_file.master_user_data.rendered}"
+  user_data                   = "${data.template_cloudinit_config.master.rendered}"
   key_name                    = "${var.key_name}"
   ebs_optimized               = true
-  associate_public_ip_address = false
+  associate_public_ip_address = "${var.associate_public_ip_address}"
   security_groups             = ["${aws_security_group.kubernetes.id}"]
   iam_instance_profile        = "${aws_iam_instance_profile.master.id}"
 

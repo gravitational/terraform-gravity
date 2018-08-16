@@ -119,3 +119,15 @@ data "aws_ami" "base" {
     values = ["centos-7-k8s-base-ami *"]
   }
 }
+
+output "ops_token" {
+  value = "${module.gravity.secret_admin_token}"
+}
+
+output "cluster1_token" {
+  value = "${module.telekube.secret_admin_token}"
+}
+
+output "cluster2_token" {
+  value = "${module.telekube2.secret_admin_token}"
+}

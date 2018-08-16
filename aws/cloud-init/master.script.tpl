@@ -8,6 +8,10 @@ if [ "${skip_install}" == "true" ]; then
   exit 0
 fi
 
+# Set some curl options so that temporary failures get retried
+# More info: https://ec.haxx.se/usingcurl-timeouts.html
+CURL_OPTS="--retry 100 --retry-delay 0 --connect-timeout 10 --max-time 300"
+
 # Apparently AWS ELB interface does not expose the proper ELB Hosted Zone ID for use
 # with Route53 to properly create ALIAS records
 # See: https://forums.aws.amazon.com/thread.jspa?messageID=608949 and https://github.com/hashicorp/terraform/issues/9289

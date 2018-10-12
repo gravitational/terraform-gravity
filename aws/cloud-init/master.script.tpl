@@ -195,8 +195,17 @@ EOF
     # TODO(knisbet) automatic renewal and import into telekube
     yum -y install epel-release
     yum -y install certbot
-    pip install certbot-dns-route53
-    certbot certonly -n --agree-tos --email ${email} --dns-route53 -d ${cluster_name}
+
+    # install certbot in a virtualenv to work around system python dependency issues
+    yum -y install python-virtualenv
+    mkdir -p /root/virtualenv
+    cd /root/virtualenv
+    virtualenv --no-site-packages -p /usr/bin/python2.7 certbot
+    . /root/virtualenv/certbot/bin/activate
+    pip install certbot certbot-dns-route53
+    deactivate
+    /root/virtualenv/certbot/bin/certbot certonly -n --agree-tos --email ${email} --dns-route53 -d ${cluster_name}
+    cd
 
     cat <<EOF > keypair.yaml
 kind: tlskeypair

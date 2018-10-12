@@ -106,7 +106,8 @@ module "telekube2" {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region  = "us-east-1"
+  version = "1.40.0"
 }
 
 // TODO(knisbet) make sure this works with a public AMI

@@ -77,9 +77,4 @@ resource "aws_launch_configuration" "master" {
 resource "aws_iam_instance_profile" "master" {
   name       = "${var.name}-master"
   role       = "${aws_iam_role.master.name}"
-  depends_on = ["aws_iam_role_policy.master"]
-
-  provisioner "local-exec" {
-    command = "sleep 30"
-  }
 }

@@ -69,9 +69,4 @@ resource "aws_launch_configuration" "worker" {
 resource "aws_iam_instance_profile" "worker" {
   name       = "${var.name}-worker"
   role       = "${aws_iam_role.worker.name}"
-  depends_on = ["aws_iam_role_policy.worker"]
-
-  provisioner "local-exec" {
-    command = "sleep 30"
-  }
 }

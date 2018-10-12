@@ -55,6 +55,7 @@ resource "aws_launch_configuration" "master" {
     volume_size           = "500"
     device_name           = "/dev/xvdb"
     iops                  = 1500
+    encrypted             = "${var.ebs_encryption}"
   }
 
   // /var/lib/gravity/etcd
@@ -64,6 +65,7 @@ resource "aws_launch_configuration" "master" {
     volume_size           = "100"
     device_name           = "/dev/xvdc"
     iops                  = 1500
+    encrypted             = "${var.ebs_encryption}"
   }
 
   lifecycle {

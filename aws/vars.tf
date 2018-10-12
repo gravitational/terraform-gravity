@@ -52,6 +52,21 @@ variable "worker_ami" {
   description = "AWS AMI to use for master nodes"
 }
 
+variable "ebs_encryption" {
+  description = "EBS encryption"
+  default     = false
+}
+
+variable "worker_ebs_volume_size" {
+  description = "The size of /var/lib/gravity on worker nodes in gigabytes"
+  default     = 500
+}
+
+variable "worker_ebs_iops" {
+  description = "The amount of provisioned IOPS for /var/lib/gravity on worker nodes"
+  default     = 1500
+}
+
 variable "master_role" {
   description = "The master node role to install as"
   default     = "node"

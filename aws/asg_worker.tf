@@ -49,13 +49,13 @@ resource "aws_launch_configuration" "worker" {
   }
 
   // /var/lib/gravity
-  // TODO(knisbet): volume size/iops as variables
   ebs_block_device = {
     delete_on_termination = true
     volume_type           = "io1"
-    volume_size           = "500"
+    volume_size           = "${var.worker_ebs_volume_size}"
     device_name           = "/dev/xvdb"
-    iops                  = 1500
+    iops                  = "${var.worker_ebs_iops}"
+    encrypted             = "${var.ebs_encryption}"
   }
 
   lifecycle {

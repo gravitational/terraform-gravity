@@ -20,13 +20,23 @@ variable "worker_count" {
   description = "Number of worker nodes to provision"
 }
 
-variable "subnets" {
-  description = "List of CIDR notation subnet to create for this cluster"
+variable "availability_zones" {
+  description = "List of availability_zones to spread the provided subnets"
   type        = "list"
 }
 
-variable "availability_zones" {
-  description = "List of availability_zones to spread the provided subnets"
+variable "subnets" {
+  description = "A list of subnet id's to use for the cluster"
+  type        = "list"
+}
+
+variable "master_security_group" {
+  description = "Security group to assign master nodes"
+  type        = "list"
+}
+
+variable "worker_security_group" {
+  description = "Security group to assign master nodes"
   type        = "list"
 }
 
@@ -77,15 +87,15 @@ variable "worker_role" {
   default     = "knode"
 }
 
+variable "associate_public_ip_address" {
+  description = "Associate public IP to launched instances"
+  default     = false
+}
+
 // AWS KMS alias used for encryption/decryption
 // default is alias used in SSM
 variable "kms_alias_name" {
   default = "alias/aws/ssm"
-}
-
-variable "associate_public_ip_address" {
-  description = "Associate public IP to launched instances"
-  default     = false
 }
 
 variable "gravity_version" {
@@ -120,11 +130,6 @@ variable "ops_advertise_addr" {
 
 variable "aws_hosted_zone_name" {
   description = "Temporary: the name of the route53 zone to add DNS records to for this cluster"
-  default     = ""
-}
-
-variable "internet_gateway" {
-  description = "Internet gateway of the VPC to use for public nodes"
   default     = ""
 }
 

@@ -22,31 +22,51 @@ variable "oidc_client_secret" {
 // Create a new VPC for the ops center cluster
 module "vpc" {
   //source              = "github.com/gravitational/terraform-gravity//aws/vpc?ref=304ab9386e3f85b6b5f91340f0c69b2cdc7582b1"
-  source              = "../../aws/vpc"
-  name                = "${local.name}"
-  enable_internet     = true
-  enable_nat_instance = false
-  ssh_key_name        = "ops"
-  tags                = "${local.tags}"
+  source = "../../aws/vpc"
+  name   = "${local.name}"
+
+  tags = "${local.tags}"
+
+  // cidr = "10.1.0.0/16"
+  // public_subnets = ["10.1.0.0/24"]
 }
 
-module "gravity" {
+module "ops_center_network" {
+  source = "../../aws/network/"
+
+  name = "${local.name}"
+  cidr = "${cidrsubnet(module.vpc.cidr, 6, 0)}" // assign a /22 to this cluster
+
+  availability_zones = ["us-east-1a", "us-east-1b"]
+  vpc_id             = "${module.vpc.id}"
+  tags               = "${local.tags}"
+  internet_gateway   = "${module.vpc.internet_gateway}"
+
+  // enable_public_elb = true
+  // enable_security_group = true
+  // associate_public_ip_address = false
+}
+
+module "ops_center" {
   //source          = "github.com/gravitational/terraform-gravity//aws?ref=304ab9386e3f85b6b5f91340f0c69b2cdc7582b1"
-  source                      = "../../aws/"
-  name                        = "${local.name}"
-  key_name                    = "ops"
-  tags                        = "${local.tags}"
-  master_count                = 3
-  worker_count                = 2
-  subnets                     = ["10.1.1.0/24"]
-  availability_zones          = "${module.vpc.availability_zones}"
-  internet_gateway            = "${module.vpc.internet_gateway}"
+  source       = "../../aws/"
+  name         = "${local.name}"
+  key_name     = "ops"
+  tags         = "${local.tags}"
+  master_count = 1
+  worker_count = 0
+  skip_install = false
+
+  availability_zones          = "${module.ops_center_network.availability_zones}"
   master_ami                  = "${data.aws_ami.base.id}"
   worker_ami                  = "${data.aws_ami.base.id}"
   vpc_id                      = "${module.vpc.id}"
-  associate_public_ip_address = true
+  master_security_group       = "${module.ops_center_network.default_security_group}"
+  worker_security_group       = "${module.ops_center_network.default_security_group}"
+  subnets                     = "${module.ops_center_network.private_subnet_ids}"
+  associate_public_ip_address = false
 
-  dl_url = "opscenter:5.0.11"
+  dl_url = "opscenter:5.2.0"
 
   //dl_url = "s3://knisbet-test/opscenter.tar"
 
@@ -60,50 +80,91 @@ module "gravity" {
   oidc_issuer_url    = "https://gravitational.auth0.com/"
 }
 
-module "telekube" {
-  //source          = "github.com/gravitational/terraform-gravity//aws?ref=304ab9386e3f85b6b5f91340f0c69b2cdc7582b1"
-  source             = "../../aws/"
-  name               = "tf-cluster1.gravitational.io"
-  key_name           = "ops"
-  tags               = "${local.tags}"
-  master_count       = 3
-  worker_count       = 2
-  subnets            = ["10.1.2.0/24"]
-  availability_zones = "${module.vpc.availability_zones}"
-  internet_gateway   = "${module.vpc.internet_gateway}"
-  master_ami         = "${data.aws_ami.base.id}"
-  worker_ami         = "${data.aws_ami.base.id}"
+module "cluster1_network" {
+  source = "../../aws/network/"
+
+  name = "tf-cluster1.gravitational.io"
+  cidr = "${cidrsubnet(module.vpc.cidr, 6, 1)}" // assign a /22 to this cluster
+
+  availability_zones = ["us-east-1a", "us-east-1b"]
   vpc_id             = "${module.vpc.id}"
+  tags               = "${local.tags}"
+  internet_gateway   = "${module.vpc.internet_gateway}"
 
-  associate_public_ip_address = true
+  // enable_public_elb = true
+  // enable_security_group = true
+  // associate_public_ip_address = false
+}
 
-  dl_url = "telekube:5.0.11"
+module "cluster1" {
+  //source          = "github.com/gravitational/terraform-gravity//aws?ref=304ab9386e3f85b6b5f91340f0c69b2cdc7582b1"
+  source       = "../../aws/"
+  name         = "tf-cluster1.gravitational.io"
+  key_name     = "ops"
+  tags         = "${local.tags}"
+  master_count = 1
+  worker_count = 0
+
+  master_ami                  = "${data.aws_ami.base.id}"
+  worker_ami                  = "${data.aws_ami.base.id}"
+  vpc_id                      = "${module.vpc.id}"
+  availability_zones          = "${module.cluster1_network.availability_zones}"
+  master_security_group       = "${module.cluster1_network.default_security_group}"
+  worker_security_group       = "${module.cluster1_network.default_security_group}"
+  subnets                     = "${module.cluster1_network.private_subnet_ids}"
+  associate_public_ip_address = false
+
+  dl_url = "telekube:5.2.0"
   flavor = "one"
 
   // trusted cluster
   trusted_cluster_host  = "${local.name}"
-  trusted_cluster_token = "${module.gravity.secret_trusted_cluster_token}"
+  trusted_cluster_token = "${module.ops_center.secret_trusted_cluster_token}"
 }
 
-module "telekube2" {
+/*
+module "cluster2_network" {
+  source = "../../aws/network/"
+
+  name = "tf-cluster2.gravitational.io"
+  cidr = "${cidrsubnet(module.vpc.cidr, 6, 2)}" // assign a /22 to this cluster
+
+  availability_zones = ["us-east-1a", "us-east-1b"]
+  vpc_id             = "${module.vpc.id}"
+  tags               = "${local.tags}"
+  internet_gateway   = "${module.vpc.internet_gateway}"
+
+  // enable_public_elb = true
+  // enable_security_group = true
+  // associate_public_ip_address = false
+}
+
+module "cluster2" {
   //source          = "github.com/gravitational/terraform-gravity//aws?ref=304ab9386e3f85b6b5f91340f0c69b2cdc7582b1"
-  source                      = "../../aws/"
-  name                        = "tf-cluster2.gravitational.io"
-  key_name                    = "ops"
-  tags                        = "${local.tags}"
-  master_count                = 3
-  worker_count                = 0
-  subnets                     = ["10.1.3.0/24"]
-  availability_zones          = "${module.vpc.availability_zones}"
-  internet_gateway            = "${module.vpc.internet_gateway}"
+  source       = "../../aws/"
+  name         = "tf-cluster2.gravitational.io"
+  key_name     = "ops"
+  tags         = "${local.tags}"
+  master_count = 1
+  worker_count = 0
+
   master_ami                  = "${data.aws_ami.base.id}"
   worker_ami                  = "${data.aws_ami.base.id}"
   vpc_id                      = "${module.vpc.id}"
-  associate_public_ip_address = true
+  availability_zones          = "${module.cluster2_network.availability_zones}"
+  master_security_group       = "${module.cluster2_network.default_security_group}"
+  worker_security_group       = "${module.cluster2_network.default_security_group}"
+  subnets                     = "${module.cluster2_network.private_subnet_ids}"
+  associate_public_ip_address = false
 
-  dl_url = "telekube:5.0.10"
+  dl_url = "telekube:5.2.0"
   flavor = "one"
+
+  // trusted cluster
+  trusted_cluster_host  = "${local.name}"
+  trusted_cluster_token = "${module.ops_center.secret_trusted_cluster_token}"
 }
+*/
 
 provider "aws" {
   region  = "us-east-1"
@@ -122,9 +183,10 @@ data "aws_ami" "base" {
 }
 
 output "ops_token" {
-  value = "${module.gravity.secret_admin_token}"
+  value = "${module.ops_center.secret_admin_token}"
 }
 
+/*
 output "cluster1_token" {
   value = "${module.telekube.secret_admin_token}"
 }
@@ -132,3 +194,5 @@ output "cluster1_token" {
 output "cluster2_token" {
   value = "${module.telekube2.secret_admin_token}"
 }
+*/
+

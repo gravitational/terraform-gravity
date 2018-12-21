@@ -12,7 +12,6 @@ fi
 #
 EC2_AVAIL_ZONE=`curl $${CURL_OPTS} -s http://169.254.169.254/latest/meta-data/placement/availability-zone`
 EC2_REGION="`echo \"$EC2_AVAIL_ZONE\" | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
-EC2_INSTANCE_ID=`curl $${CURL_OPTS} -s http://169.254.169.254/latest/meta-data/instance-id`
 
 # Wait until the leader completes it's installation and is available
 until [ -f /tmp/gravity ]; do

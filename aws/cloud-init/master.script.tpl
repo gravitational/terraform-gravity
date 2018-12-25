@@ -42,8 +42,7 @@ mount /var/lib/gravity/planet/etcd
 #
 # Install Gravity Application
 #
-EC2_AVAIL_ZONE=`curl $${CURL_OPTS} -s http://169.254.169.254/latest/meta-data/placement/availability-zone`
-EC2_REGION="`echo \"$EC2_AVAIL_ZONE\" | sed -e 's:\([0-9][0-9]*\)[a-z]*\$:\\1:'`"
+EC2_REGION=$(curl $${CURL_OPTS} -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | cut -d\" -f4)
 EC2_INSTANCE_ID=`curl $${CURL_OPTS} -s http://169.254.169.254/latest/meta-data/instance-id`
 
 AUTOSCALING_GROUP_NAME=`aws --region $EC2_REGION autoscaling describe-auto-scaling-instances --instance-ids $EC2_INSTANCE_ID --query 'AutoScalingInstances[*].AutoScalingGroupName' --output text`
@@ -84,13 +83,13 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
     aws s3 cp ${source} /tmp/installer.tar
 
   # application is on a private ops center
-  elif [ ! -z "${ops_url}" ]; then 
+  elif [ ! -z "${ops_url}" ]; then
     tele login --token=${ops_token} ${ops_url}
-    tele pull -o /tmp/installer.tar ${source} 
+    tele pull -o /tmp/installer.tar ${source}
 
   # default get.gravitational.io
-  else 
-    tele pull -o /tmp/installer.tar ${source} 
+  else
+    tele pull -o /tmp/installer.tar ${source}
   fi
 
   ADVERTISE=""
@@ -148,7 +147,7 @@ EOF
   gravity resource create trusted_cluster.yaml
   rm trusted_cluster.yaml
   fi
-  
+
 
   #
   # Provision an identity provider for admin access
@@ -216,7 +215,7 @@ spec:
   private_key: |
 EOF
     cat /etc/letsencrypt/live/${cluster_name}/privkey.pem | sed 's/^/    /' >> keypair.yaml
-    echo "  cert: |" >> keypair.yaml 
+    echo "  cert: |" >> keypair.yaml
     cat /etc/letsencrypt/live/${cluster_name}/fullchain.pem | sed 's/^/    /' >> keypair.yaml
     gravity resource create keypair.yaml
     rm keypair.yaml
@@ -303,7 +302,7 @@ else
     fi
   done
 
- 
+
 
   # In AWS mode gravity will discover the data from AWS SSM and join the cluster
   /tmp/gravity autojoin ${cluster_name} --role ${master_role}

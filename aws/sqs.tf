@@ -8,27 +8,37 @@ resource "aws_sqs_queue" "lifecycle_hooks" {
   receive_wait_time_seconds = 10
 }
 
+data "aws_iam_policy_document" "sqs-autoscale-lifecycle-hook-assume-role-policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["autoscaling.amazonaws.com"]
+    }
+  }
+}
+
 resource "aws_iam_role" "lifecycle_hooks" {
   name = "${var.name}-lifecycle-hooks"
+  tags = "${merge(local.common_tags, map())}"
 
-  assume_role_policy = <<EOF
-{
-	"Version": "2012-10-17",
-	"Statement": [
-	  {
-		"Sid": "",
-		"Effect": "Allow",
-		"Principal": {
-		  "Service": "autoscaling.amazonaws.com"
-		},
-		"Action": "sts:AssumeRole"
-	  }
-	]
-}
-EOF
+  assume_role_policy = "${data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-assume-role-policy.json}"
 
   lifecycle {
     create_before_destroy = true
+  }
+}
+
+data "aws_iam_policy_document" "sqs-autoscale-lifecycle-hook-crud" {
+  statement {
+    actions = [
+      "sqs:SendMessage",
+      "sqs:GetQueueUrl",
+      "sns:Publish",
+    ]
+
+    resources = ["${aws_sqs_queue.lifecycle_hooks.arn}"]
   }
 }
 
@@ -37,20 +47,7 @@ resource "aws_iam_role_policy" "lifecycle_hooks" {
   name = "${var.name}-lifecycle-hooks"
   role = "${aws_iam_role.lifecycle_hooks.id}"
 
-  policy = <<EOF
-{
-	"Version": "2012-10-17",
-	"Statement": [{
-	  "Effect": "Allow",
-	  "Resource": "${aws_sqs_queue.lifecycle_hooks.arn}",
-	  "Action": [
-		"sqs:SendMessage",
-		"sqs:GetQueueUrl",
-		"sns:Publish"
-	  ]
-	}]
-}
-EOF
+  policy = "${data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-crud.json}"
 
   lifecycle {
     create_before_destroy = true

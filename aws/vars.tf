@@ -181,7 +181,8 @@ variable "trusted_cluster_host" {
 
 // safe cluster name to use in places sensitive to naming, e.g. SQS queues and lifecycle hooks
 locals {
-  safe_name = "${replace(var.name, "/[^a-zA-Z0-9\\-]/", "")}"
+  safe_name  = "${replace(var.name, "/[^a-zA-Z0-9\\-]/", "")}"
+  arn_prefix = "arn:${element(split(":", data.aws_caller_identity.current.arn), 1)}"
 
   common_tags = {
     "Name"                              = "${var.name}"

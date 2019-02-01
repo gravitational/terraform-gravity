@@ -61,7 +61,7 @@ resource "aws_subnet" "private" {
 
   cidr_block        = "${cidrsubnet(var.cidr, 3, count.index * 2)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
-  tags              = "${local.merged_tags}"
+  tags              = "${merge(local.merged_tags, map("kubernetes.io/role/internal-elb", ""))}"
 }
 
 resource "aws_subnet" "public" {
@@ -71,7 +71,7 @@ resource "aws_subnet" "public" {
 
   cidr_block        = "${cidrsubnet(var.cidr, 3, count.index * 2 + 1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
-  tags              = "${local.merged_tags}"
+  tags              = "${merge(local.merged_tags, map("kubernetes.io/role/elb", ""))}"
 }
 
 //

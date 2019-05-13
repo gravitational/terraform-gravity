@@ -113,7 +113,7 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
   #
   TF_ADMIN_TOKEN=`aws ssm get-parameter --name /telekube/${cluster_name}/tf-admin-token --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
   if [ ! -z "$${TF_ADMIN_TOKEN}" ]; then
-    cat <<EOF > token.yaml
+    gravity resource create <<EOF
 kind: token
 version: v2
 metadata:
@@ -121,8 +121,6 @@ metadata:
 spec:
    user: "adminagent@${cluster_name}"
 EOF
-    gravity resource create token.yaml
-    rm token.yaml
   fi
 
   #
@@ -132,7 +130,7 @@ EOF
   TC_HOSTNAME=`aws ssm get-parameter --name /telekube/${cluster_name}/trusted-cluster/host --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
   TC_TOKEN=`aws ssm get-parameter --name /telekube/${cluster_name}/trusted-cluster/token --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
   if [ ! -z "$${TC_HOSTNAME}" ]; then
-  cat <<EOF > trusted_cluster.yaml
+  gravity resource create <<EOF
 kind: trusted_cluster
 version: v2
 metadata:
@@ -144,8 +142,6 @@ spec:
   tunnel_addr: "$${TC_HOSTNAME}:3024"
   web_proxy_addr: "$${TC_HOSTNAME}:443"
 EOF
-  gravity resource create trusted_cluster.yaml
-  rm trusted_cluster.yaml
   fi
 
 
@@ -157,7 +153,7 @@ EOF
   OIDC_CLAIM=`aws ssm get-parameter --name /telekube/${cluster_name}/oidc/claim --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
   OIDC_ISSUER_URL=`aws ssm get-parameter --name /telekube/${cluster_name}/oidc/issuer-url --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
   if [ ! -z "$${OIDC_CLIENT_SECRET}" ]; then
-    cat <<EOF > oidc.yaml
+    gravity resource create <<EOF
 kind: oidc
 version: v2
 metadata:
@@ -175,8 +171,6 @@ spec:
   scope:
   - roles
 EOF
-    gravity resource create oidc.yaml
-    rm oidc.yaml
   fi
 
   #

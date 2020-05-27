@@ -6,7 +6,7 @@
 data "template_file" "common-config" {
   template = "${file("${path.module}/cloud-init/common.config.tpl")}"
 
-  vars {
+  vars = {
     cluster_name         = "${var.name}"
     gravity_version      = "${var.gravity_version}"
     source               = "${var.dl_url}"
@@ -26,7 +26,7 @@ data "template_file" "common-config" {
 data "template_file" "common-script" {
   template = "${file("${path.module}/cloud-init/common.script.tpl")}"
 
-  vars {
+  vars = {
     cluster_name         = "${var.name}"
     gravity_version      = "${var.gravity_version}"
     source               = "${var.dl_url}"
@@ -46,7 +46,7 @@ data "template_file" "common-script" {
 data "template_file" "master" {
   template = "${file("${path.module}/cloud-init/master.script.tpl")}"
 
-  vars {
+  vars = {
     cluster_name         = "${var.name}"
     gravity_version      = "${var.gravity_version}"
     source               = "${var.dl_url}"
@@ -72,7 +72,7 @@ data "template_file" "master" {
 data "template_file" "worker" {
   template = "${file("${path.module}/cloud-init/worker.script.tpl")}"
 
-  vars {
+  vars = {
     cluster_name         = "${var.name}"
     gravity_version      = "${var.gravity_version}"
     source               = "${var.dl_url}"

@@ -32,12 +32,12 @@ variable "subnets" {
 
 variable "master_security_group" {
   description = "Security group to assign master nodes"
-  type        = "list"
+  type        = "string"
 }
 
 variable "worker_security_group" {
   description = "Security group to assign master nodes"
-  type        = "list"
+  type        = "string"
 }
 
 variable "vpc_id" {
@@ -51,7 +51,7 @@ variable "master_instance_type" {
 
 variable "worker_instance_type" {
   description = "AWS instance type for worker nodes"
-  default     = "c4.xlarge"
+  default     = "c4.large"
 }
 
 variable "master_ami" {
@@ -198,7 +198,7 @@ locals {
 resource "null_resource" "asg_tags" {
   count = "${length(local.merged_tags)}"
 
-  triggers {
+  triggers = {
     key                 = "${element(keys(local.merged_tags), count.index)}"
     value               = "${element(values(local.merged_tags), count.index)}"
     propagate_at_launch = true
@@ -206,7 +206,7 @@ resource "null_resource" "asg_tags" {
 }
 
 locals {
-  asg_tags = ["${null_resource.asg_tags.*.triggers}"]
+  asg_tags = null_resource.asg_tags.*.triggers
 }
 
 data "aws_region" "current" {}

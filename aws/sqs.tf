@@ -21,7 +21,7 @@ data "aws_iam_policy_document" "sqs-autoscale-lifecycle-hook-assume-role-policy"
 
 resource "aws_iam_role" "lifecycle_hooks" {
   name = "${var.name}-lifecycle-hooks"
-  tags = "${merge(local.common_tags, map())}"
+  tags = "${local.common_tags}"
 
   assume_role_policy = "${data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-assume-role-policy.json}"
 

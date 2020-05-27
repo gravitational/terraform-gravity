@@ -57,6 +57,7 @@ resource "aws_vpc" "main" {
 
 data "aws_ami" "nat_ami" {
   most_recent = true
+  owners           = ["self", "amazon"]
 
   filter {
     name   = "owner-alias"

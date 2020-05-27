@@ -84,12 +84,12 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
 
   # application is on a private ops center
   elif [ ! -z "${ops_url}" ]; then
-    tele login --token=${ops_token} ${ops_url}
-    tele pull -o /tmp/installer.tar ${source}
+    /usr/local/bin/tele login --token=${ops_token} ${ops_url}
+    /usr/local/bin/tele pull -o /tmp/installer.tar ${source}
 
   # default get.gravitational.io
   else
-    tele pull -o /tmp/installer.tar ${source}
+    /usr/local/bin/tele pull -o /tmp/installer.tar ${source}
   fi
 
   ADVERTISE=""

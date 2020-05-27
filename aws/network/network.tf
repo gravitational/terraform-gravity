@@ -163,7 +163,8 @@ resource "aws_security_group_rule" "ingress_allow_ssh" {
   to_port           = 22
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = "${aws_security_group.kubernetes.id}"
+  //security_group_id = "${aws_security_group.kubernetes.id}"
+  security_group_id = "${element(concat(aws_security_group.kubernetes.*.id, list("")), 0)}"
 }
 
 resource "aws_security_group_rule" "ingress_allow_internal_traffic" {
@@ -174,7 +175,8 @@ resource "aws_security_group_rule" "ingress_allow_internal_traffic" {
   to_port           = 0
   protocol          = "-1"
   self              = true
-  security_group_id = "${aws_security_group.kubernetes.id}"
+  //security_group_id = "${aws_security_group.kubernetes.id}"
+  security_group_id = "${element(concat(aws_security_group.kubernetes.*.id, list("")), 0)}"
 }
 
 resource "aws_security_group_rule" "egress_allow_all_traffic" {
@@ -185,19 +187,20 @@ resource "aws_security_group_rule" "egress_allow_all_traffic" {
   to_port           = 0
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = "${aws_security_group.kubernetes.id}"
+  //security_group_id = "${aws_security_group.kubernetes.id}"
+  security_group_id = "${element(concat(aws_security_group.kubernetes.*.id, list("")), 0)}"
 }
 
 output "default_security_group" {
-  value = "${aws_security_group.kubernetes.*.id}"
+  value = "${element(aws_security_group.kubernetes.*.id, 0)}"
 }
 
 output "public_subnet_ids" {
-  value = ["${aws_subnet.public.*.id}"]
+  value = aws_subnet.public.*.id
 }
 
 output "private_subnet_ids" {
-  value      = ["${aws_subnet.private.*.id}"]
+  value      = aws_subnet.private.*.id
   depends_on = ["aws_nat_gateway.main"]
 }
 

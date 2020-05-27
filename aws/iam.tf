@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "master-instance-assume-role-policy" {
 
 resource "aws_iam_role" "master" {
   name               = "${var.name}-master"
-  tags               = "${merge(local.common_tags, map())}"
+  tags               = "${local.common_tags}"
   assume_role_policy = "${data.aws_iam_policy_document.master-instance-assume-role-policy.json}"
 }
 
@@ -157,7 +157,7 @@ data "aws_iam_policy_document" "worker-instance-assume-role-policy" {
 
 resource "aws_iam_role" "worker" {
   name               = "${var.name}-worker"
-  tags               = "${merge(local.common_tags, map())}"
+  tags               = "${local.common_tags}"
   assume_role_policy = "${data.aws_iam_policy_document.worker-instance-assume-role-policy.json}"
 }
 

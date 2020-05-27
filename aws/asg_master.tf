@@ -12,7 +12,7 @@ resource "aws_autoscaling_group" "master" {
   desired_capacity          = "${var.master_count}"
   force_delete              = false
   launch_configuration      = "${aws_launch_configuration.master.name}"
-  vpc_zone_identifier       = ["${var.subnets}"]
+  vpc_zone_identifier       = var.subnets
   default_cooldown          = 30
 
   // external autoscale algos can modify these values,
@@ -22,7 +22,7 @@ resource "aws_autoscaling_group" "master" {
     create_before_destroy = true
   }
 
-  tags = ["${local.asg_tags}"]
+  tags = local.asg_tags
 
   depends_on = ["aws_launch_configuration.master"]
 }
@@ -49,7 +49,7 @@ resource "aws_launch_configuration" "master" {
   }
 
   // /var/lib/gravity
-  ebs_block_device = {
+  ebs_block_device {
     delete_on_termination = true
     volume_type           = "io1"
     volume_size           = "500"
@@ -59,7 +59,7 @@ resource "aws_launch_configuration" "master" {
   }
 
   // /var/lib/gravity/etcd
-  ebs_block_device = {
+  ebs_block_device {
     delete_on_termination = true
     volume_type           = "io1"
     volume_size           = "100"

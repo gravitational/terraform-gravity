@@ -1,5 +1,5 @@
 data "aws_kms_alias" "ssm" {
-  name = "${var.kms_alias_name}"
+  name = var.kms_alias_name
 }
 
 data "aws_iam_policy_document" "master-instance-assume-role-policy" {
@@ -15,8 +15,8 @@ data "aws_iam_policy_document" "master-instance-assume-role-policy" {
 
 resource "aws_iam_role" "master" {
   name               = "${var.name}-master"
-  tags               = "${local.common_tags}"
-  assume_role_policy = "${data.aws_iam_policy_document.master-instance-assume-role-policy.json}"
+  tags               = local.common_tags
+  assume_role_policy = data.aws_iam_policy_document.master-instance-assume-role-policy.json
 }
 
 data "aws_iam_policy_document" "master-instance-kubernetes-operations" {
@@ -84,10 +84,9 @@ data "aws_iam_policy_document" "master-instance-kubernetes-operations" {
 }
 
 resource "aws_iam_role_policy" "master" {
-  name = "${var.name}-master"
-  role = "${aws_iam_role.master.id}"
-
-  policy = "${data.aws_iam_policy_document.master-instance-kubernetes-operations.json}"
+  name   = "${var.name}-master"
+  role   = aws_iam_role.master.id
+  policy = data.aws_iam_policy_document.master-instance-kubernetes-operations.json
 }
 
 data "aws_iam_policy_document" "master-ssm" {
@@ -109,18 +108,15 @@ data "aws_iam_policy_document" "master-ssm" {
 
   // fetch KMS decrypt key
   statement {
-    actions = ["kms:Decrypt"]
-
-    resources = [
-      "${data.aws_kms_alias.ssm.target_key_arn}",
-    ]
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn ]
   }
 }
 
 resource "aws_iam_role_policy" "master_ssm" {
   name   = "${var.name}-master-ssm"
-  role   = "${aws_iam_role.master.id}"
-  policy = "${data.aws_iam_policy_document.master-ssm.json}"
+  role   = aws_iam_role.master.id
+  policy = data.aws_iam_policy_document.master-ssm.json
 }
 
 data "aws_iam_policy_document" "master-lifecycle-hooks" {
@@ -132,16 +128,14 @@ data "aws_iam_policy_document" "master-lifecycle-hooks" {
       "sqs:GetQueueUrl",
     ]
 
-    resources = [
-      "${aws_sqs_queue.lifecycle_hooks.arn}",
-    ]
+    resources = [aws_sqs_queue.lifecycle_hooks.arn]
   }
 }
 
 resource "aws_iam_role_policy" "master_lifecycle_hooks" {
   name   = "${var.name}-master-lifecycle-hooks"
-  role   = "${aws_iam_role.master.id}"
-  policy = "${data.aws_iam_policy_document.master-lifecycle-hooks.json}"
+  role   = aws_iam_role.master.id
+  policy = data.aws_iam_policy_document.master-lifecycle-hooks.json
 }
 
 data "aws_iam_policy_document" "worker-instance-assume-role-policy" {
@@ -157,8 +151,8 @@ data "aws_iam_policy_document" "worker-instance-assume-role-policy" {
 
 resource "aws_iam_role" "worker" {
   name               = "${var.name}-worker"
-  tags               = "${local.common_tags}"
-  assume_role_policy = "${data.aws_iam_policy_document.worker-instance-assume-role-policy.json}"
+  tags               = local.common_tags
+  assume_role_policy = data.aws_iam_policy_document.worker-instance-assume-role-policy.json
 }
 
 data "aws_iam_policy_document" "worker-instance-kubernetes-operations" {
@@ -208,8 +202,8 @@ data "aws_iam_policy_document" "worker-instance-kubernetes-operations" {
 
 resource "aws_iam_role_policy" "worker" {
   name   = "${var.name}-worker"
-  role   = "${aws_iam_role.worker.id}"
-  policy = "${data.aws_iam_policy_document.worker-instance-kubernetes-operations.json}"
+  role   = aws_iam_role.worker.id
+  policy = data.aws_iam_policy_document.worker-instance-kubernetes-operations.json
 }
 
 data "aws_iam_policy_document" "worker-ssm" {
@@ -229,17 +223,14 @@ data "aws_iam_policy_document" "worker-ssm" {
 
   // fetch KMS decrypt key
   statement {
-    actions = ["kms:Decrypt"]
-
-    resources = [
-      "${data.aws_kms_alias.ssm.target_key_arn}",
-    ]
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
   }
 }
 
 // Give workers the ability to fetch the gravity tokens and decrypt key
 resource "aws_iam_role_policy" "worker_ssm" {
   name   = "${var.name}-worker-ssm"
-  role   = "${aws_iam_role.worker.id}"
-  policy = "${data.aws_iam_policy_document.worker-ssm.json}"
+  role   = aws_iam_role.worker.id
+  policy = data.aws_iam_policy_document.worker-ssm.json
 }

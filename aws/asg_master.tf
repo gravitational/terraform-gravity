@@ -9,22 +9,22 @@ resource "aws_autoscaling_group" "master" {
   min_size                  = "0"
   health_check_grace_period = 300
   health_check_type         = "EC2"
-  desired_capacity          = "${var.master_count}"
+  desired_capacity          = var.master_count
   force_delete              = false
-  launch_configuration      = "${aws_launch_configuration.master.name}"
+  launch_configuration      = aws_launch_configuration.master.name
   vpc_zone_identifier       = var.subnets
   default_cooldown          = 30
 
   // external autoscale algos can modify these values,
   // so ignore changes to them
   lifecycle {
-    ignore_changes        = ["desired_capacity", "max_size", "min_size"]
+    ignore_changes        = [desired_capacity, max_size, min_size]
     create_before_destroy = true
   }
 
   tags = local.asg_tags
 
-  depends_on = ["aws_launch_configuration.master"]
+  depends_on = [aws_launch_configuration.master]
 }
 
 //
@@ -32,14 +32,14 @@ resource "aws_autoscaling_group" "master" {
 //
 resource "aws_launch_configuration" "master" {
   name_prefix                 = "${var.name}-lc-master-"
-  image_id                    = "${var.master_ami}"
-  instance_type               = "${var.master_instance_type}"
-  user_data                   = "${data.template_cloudinit_config.master.rendered}"
-  key_name                    = "${var.key_name}"
+  image_id                    = var.master_ami
+  instance_type               = var.master_instance_type
+  user_data                   = data.template_cloudinit_config.master.rendered
+  key_name                    = var.key_name
   ebs_optimized               = true
-  associate_public_ip_address = "${var.associate_public_ip_address}"
-  security_groups             = ["${var.master_security_group}"]
-  iam_instance_profile        = "${aws_iam_instance_profile.master.id}"
+  associate_public_ip_address = var.associate_public_ip_address
+  security_groups             = [var.master_security_group]
+  iam_instance_profile        = aws_iam_instance_profile.master.id
 
   root_block_device {
     delete_on_termination = true
@@ -55,7 +55,7 @@ resource "aws_launch_configuration" "master" {
     volume_size           = "500"
     device_name           = "/dev/xvdb"
     iops                  = 1500
-    encrypted             = "${var.ebs_encryption}"
+    encrypted             = var.ebs_encryption
   }
 
   // /var/lib/gravity/etcd
@@ -65,7 +65,7 @@ resource "aws_launch_configuration" "master" {
     volume_size           = "100"
     device_name           = "/dev/xvdc"
     iops                  = 1500
-    encrypted             = "${var.ebs_encryption}"
+    encrypted             = var.ebs_encryption
   }
 
   lifecycle {
@@ -78,6 +78,6 @@ resource "aws_launch_configuration" "master" {
 //
 resource "aws_iam_instance_profile" "master" {
   name = "${var.name}-master"
-  role = "${aws_iam_role.master.name}"
+  role = aws_iam_role.master.name
 }
 

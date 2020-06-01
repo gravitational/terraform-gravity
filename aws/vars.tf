@@ -8,7 +8,7 @@ variable key_name {
 
 variable "tags" {
   description = "Tags to add to the AWS resources"
-  type        = "map"
+  type        = map
 }
 
 variable "master_count" {
@@ -22,22 +22,22 @@ variable "worker_count" {
 
 variable "availability_zones" {
   description = "List of availability_zones to spread the provided subnets"
-  type        = "list"
+  type        = list
 }
 
 variable "subnets" {
   description = "A list of subnet id's to use for the cluster"
-  type        = "list"
+  type        = list
 }
 
 variable "master_security_group" {
   description = "Security group to assign master nodes"
-  type        = "string"
+  type        = string
 }
 
 variable "worker_security_group" {
   description = "Security group to assign master nodes"
-  type        = "string"
+  type        = string
 }
 
 variable "vpc_id" {
@@ -181,26 +181,26 @@ variable "trusted_cluster_host" {
 
 // safe cluster name to use in places sensitive to naming, e.g. SQS queues and lifecycle hooks
 locals {
-  safe_name  = "${replace(var.name, "/[^a-zA-Z0-9\\-]/", "")}"
+  safe_name  = replace(var.name, "/[^a-zA-Z0-9\\-]/", "")
   arn_prefix = "arn:${element(split(":", data.aws_caller_identity.current.arn), 1)}"
 
   common_tags = {
-    "Name"                              = "${var.name}"
-    "KubernetesCluster"                 = "${var.name}"
+    "Name"                              = var.name
+    "KubernetesCluster"                 = var.name
     "kubernetes.io/cluster/${var.name}" = "owned"
     Terraform                           = "true"
   }
 
-  merged_tags = "${merge(local.common_tags, var.tags)}"
+  merged_tags = merge(local.common_tags, var.tags)
 }
 
 // Create ASG tag setup from common tags
 resource "null_resource" "asg_tags" {
-  count = "${length(local.merged_tags)}"
+  count = length(local.merged_tags)
 
   triggers = {
-    key                 = "${element(keys(local.merged_tags), count.index)}"
-    value               = "${element(values(local.merged_tags), count.index)}"
+    key                 = element(keys(local.merged_tags), count.index)
+    value               = element(values(local.merged_tags), count.index)
     propagate_at_launch = true
   }
 }

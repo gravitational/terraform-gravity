@@ -9,7 +9,7 @@ variable "cidr" {
 
 variable "tags" {
   description = "User tags to add to the created AWS resources"
-  type        = "map"
+  type        = map
 }
 
 variable "instance_tenancy" {
@@ -34,7 +34,7 @@ variable "enable_internet_gateway" {
 
 locals {
   common_tags = {
-    "Name" = "${var.name}"
+    "Name" = var.name
   }
 }
 
@@ -43,12 +43,12 @@ locals {
 //
 
 resource "aws_vpc" "main" {
-  cidr_block           = "${var.cidr}"
-  instance_tenancy     = "${var.instance_tenancy}"
-  enable_dns_support   = "${var.enable_dns_support}"
-  enable_dns_hostnames = "${var.enable_dns_hostnames}"
+  cidr_block           = var.cidr
+  instance_tenancy     = var.instance_tenancy
+  enable_dns_support   = var.enable_dns_support
+  enable_dns_hostnames = var.enable_dns_hostnames
 
-  tags = "${merge(local.common_tags, var.tags)}"
+  tags = merge(local.common_tags, var.tags)
 }
 
 //
@@ -57,7 +57,7 @@ resource "aws_vpc" "main" {
 
 data "aws_ami" "nat_ami" {
   most_recent = true
-  owners           = ["self", "amazon"]
+  owners      = ["self", "amazon"]
 
   filter {
     name   = "owner-alias"
@@ -74,9 +74,8 @@ data "aws_ami" "nat_ami" {
 // Gateways
 //
 resource "aws_internet_gateway" "main" {
-  vpc_id = "${aws_vpc.main.id}"
-
-  tags = "${merge(local.common_tags, var.tags)}"
+  vpc_id = aws_vpc.main.id
+  tags = merge(local.common_tags, var.tags)
 }
 
 //
@@ -85,13 +84,13 @@ resource "aws_internet_gateway" "main" {
 
 // The VPC ID
 output "id" {
-  value = "${aws_vpc.main.id}"
+  value = aws_vpc.main.id
 }
 
 output "cidr" {
-  value = "${aws_vpc.main.cidr_block}"
+  value = aws_vpc.main.cidr_block
 }
 
 output "internet_gateway" {
-  value = "${aws_internet_gateway.main.id}"
+  value = aws_internet_gateway.main.id
 }

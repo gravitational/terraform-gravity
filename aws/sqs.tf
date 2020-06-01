@@ -4,7 +4,7 @@
 // AWS sends a message to SQS queue
 
 resource "aws_sqs_queue" "lifecycle_hooks" {
-  name                      = "${local.safe_name}"
+  name                      = local.safe_name
   receive_wait_time_seconds = 10
 }
 
@@ -20,10 +20,9 @@ data "aws_iam_policy_document" "sqs-autoscale-lifecycle-hook-assume-role-policy"
 }
 
 resource "aws_iam_role" "lifecycle_hooks" {
-  name = "${var.name}-lifecycle-hooks"
-  tags = "${local.common_tags}"
-
-  assume_role_policy = "${data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-assume-role-policy.json}"
+  name               = "${var.name}-lifecycle-hooks"
+  tags               = local.common_tags
+  assume_role_policy = data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-assume-role-policy.json
 
   lifecycle {
     create_before_destroy = true
@@ -38,16 +37,15 @@ data "aws_iam_policy_document" "sqs-autoscale-lifecycle-hook-crud" {
       "sns:Publish",
     ]
 
-    resources = ["${aws_sqs_queue.lifecycle_hooks.arn}"]
+    resources = [aws_sqs_queue.lifecycle_hooks.arn]
   }
 }
 
 # Attach policy document for access to the sqs queue
 resource "aws_iam_role_policy" "lifecycle_hooks" {
-  name = "${var.name}-lifecycle-hooks"
-  role = "${aws_iam_role.lifecycle_hooks.id}"
-
-  policy = "${data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-crud.json}"
+  name   = "${var.name}-lifecycle-hooks"
+  role   = aws_iam_role.lifecycle_hooks.id
+  policy = data.aws_iam_policy_document.sqs-autoscale-lifecycle-hook-crud.json
 
   lifecycle {
     create_before_destroy = true

@@ -42,7 +42,10 @@ data "aws_iam_policy_document" "master-instance-kubernetes-operations" {
 
   // Manage all LB operations
   statement {
-    actions   = ["elasticloadbalancing:*"]
+    actions   = [
+      "elasticloadbalancing:*",
+      "iam:CreateServiceLinkedRole"
+    ]
     resources = ["*"]
   }
 
@@ -75,11 +78,14 @@ data "aws_iam_policy_document" "master-instance-kubernetes-operations" {
 
   //TODO(knisbet) make sure s3 bucket permissions are optional / uses dl_url to get the specific object
   statement {
-    actions = ["s3:GetObject"]
+    actions   = ["s3:GetObject"]
+    resources = ["${var.dl_bucket_arn}/*"]
+  }
 
-    resources = [
-      "arn:aws:s3:::knisbet-test/*",
-    ]
+  // Additional (optional) statement
+  statement {
+    actions   = var.additional_master_iam_statement.actions
+    resources = var.additional_master_iam_statement.resources
   }
 }
 

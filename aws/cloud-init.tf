@@ -65,6 +65,11 @@ data "template_file" "master" {
     oidc_client_secret = var.oidc_client_secret
     oidc_claim         = var.oidc_claim
     oidc_issuer_url    = var.oidc_issuer_url
+
+    // SAML variables
+    saml_name              = var.saml_name
+    saml_admin_group       = var.saml_admin_group
+    saml_entity_descriptor = var.saml_entity_descriptor
   }
 }
 

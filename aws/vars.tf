@@ -108,6 +108,11 @@ variable "dl_url" {
   default     = "opscenter"
 }
 
+variable "dl_bucket_arn" {
+  description = "The ARN of the bucket for downloading the gravity application"
+  default = ""
+}
+
 variable "ops_url" {
   description = "The location of an existing ops center to pull the installer from"
   default     = ""
@@ -120,7 +125,7 @@ variable "ops_token" {
 
 variable "flavor" {
   description = "The gravity application flavor to install"
-  default     = "standalone"
+  default     = ""
 }
 
 variable "ops_advertise_addr" {
@@ -143,6 +148,20 @@ variable "skip_install" {
   default     = "false"
 }
 
+variable "additional_master_iam_statement" {
+  description = "An additional IAM policy statement that will be applied to the master role policy"
+
+  default = {
+    actions   = []
+    resources = []
+  }
+
+  type = object({
+    actions   = list(string)
+    resources = list(string)
+  })
+}
+
 //
 // OIDC variables for configuraing an identity provider on install
 //
@@ -163,6 +182,24 @@ variable "oidc_claim" {
 
 variable "oidc_issuer_url" {
   description = ""
+  default     = ""
+}
+
+//
+// SAML variables for configuraing an identity provider on install
+//
+variable "saml_name" {
+  description = "The display name of this SAML identity provider"
+  default     = ""
+}
+
+variable "saml_admin_group" {
+  description = "The group of users that will be admins on the cluster"
+  default     = ""
+}
+
+variable "saml_entity_descriptor" {
+  description = "The SAML IdP metadata in XML format"
   default     = ""
 }
 

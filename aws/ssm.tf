@@ -89,3 +89,36 @@ resource "aws_ssm_parameter" "oidc_issuer_url" {
   overwrite   = true
   tags        = local.merged_tags
 }
+
+//
+// Store SAML variables in the SSM parameter store encrypted
+//
+resource "aws_ssm_parameter" "saml_name" {
+  count       = var.saml_name != "" ? 1 : 0
+  name        = "/telekube/${var.name}/saml/name"
+  description = ""
+  type        = "SecureString"
+  value       = var.saml_name
+  overwrite   = true
+  tags        = local.merged_tags
+}
+
+resource "aws_ssm_parameter" "saml_admin_group" {
+  count       = var.saml_admin_group != "" ? 1 : 0
+  name        = "/telekube/${var.name}/saml/admin-group"
+  description = ""
+  type        = "SecureString"
+  value       = var.saml_admin_group
+  overwrite   = true
+  tags        = local.merged_tags
+}
+
+resource "aws_ssm_parameter" "saml_entity_descriptor" {
+  count       = var.saml_entity_descriptor != "" ? 1 : 0
+  name        = "/telekube/${var.name}/saml/entity-descriptor"
+  description = ""
+  type        = "SecureString"
+  value       = var.saml_entity_descriptor
+  overwrite   = true
+  tags        = local.merged_tags
+}

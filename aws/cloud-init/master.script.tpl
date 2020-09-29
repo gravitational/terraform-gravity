@@ -37,7 +37,12 @@ mkfs.ext4 /dev/xvdc
 mkdir -p /var/lib/gravity/planet/etcd
 mount /var/lib/gravity/planet/etcd
 
-
+#
+# Set home
+#
+if [ -z "$${HOME}" ]; then
+  export HOME=/root
+fi
 
 #
 # Install Gravity Application
@@ -102,10 +107,15 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
     PROVISION_TRUSTED_CLUSTER="--ops-tunnel-token $${TRUSTED_CLUSTER_TOKEN}"
   fi
 
+  FLAVOR=""
+  if [ ! -z "${flavor}" ]; then
+    FLAVOR="--flavor=${flavor}"
+  fi
+
   mkdir -p /tmp/gravity
   tar -xvf /tmp/installer.tar -C /tmp/gravity
   pushd /tmp/gravity
-  ./gravity install --cluster ${cluster_name} --flavor ${flavor} --role ${master_role} $${PROVISION_TRUSTED_CLUSTER} $${ADVERTISE}
+  ./gravity install --cloud-provider=aws --cluster ${cluster_name} $${FLAVOR} --role ${master_role} $${PROVISION_TRUSTED_CLUSTER} $${ADVERTISE}
   popd
 
   #
@@ -171,6 +181,33 @@ spec:
   scope:
   - roles
 EOF
+  fi
+
+
+  # Provisioning of a SAML identity provider.
+  SAML_NAME=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/name --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  SAML_ADMIN_GROUP=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/admin-group --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  SAML_ENTITY_DESCRIPTOR=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/entity-descriptor --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  if [ ! -z "$${SAML_ENTITY_DESCRIPTOR}" ]; then
+    cat <<EOF > saml.yaml
+kind: saml
+version: v2
+metadata:
+  name: sso
+spec:
+  acs: https://${cluster_name}/portalapi/v1/saml/callback
+  attributes_to_roles:
+  - name: groups
+    value: $${SAML_ADMIN_GROUP}
+    roles:
+    - '@teleadmin'
+  display: $${SAML_NAME}
+  entity_descriptor: |
+EOF
+    # This needs to be properly indented, hence the sed command
+    printf "$${SAML_ENTITY_DESCRIPTOR}" | sed 's/^/\ \ \ \ /' >> saml.yaml
+    gravity resource create saml.yaml
+    rm saml.yaml
   fi
 
   #

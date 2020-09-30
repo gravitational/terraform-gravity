@@ -112,10 +112,15 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
     FLAVOR="--flavor=${flavor}"
   fi
 
+  POD_CIDR=""
+  if [ ! -z "${pod_cidr}" ]; then
+      POD_CIDR="--pod-network-cidr=${pod_cidr}"
+  fi
+
   mkdir -p /tmp/gravity
   tar -xvf /tmp/installer.tar -C /tmp/gravity
   pushd /tmp/gravity
-  ./gravity install --cloud-provider=aws --cluster ${cluster_name} $${FLAVOR} --role ${master_role} $${PROVISION_TRUSTED_CLUSTER} $${ADVERTISE}
+  ./gravity install --cloud-provider=aws --cluster ${cluster_name} $${FLAVOR} --role ${master_role} $${PROVISION_TRUSTED_CLUSTER} $${ADVERTISE} $${POD_CIDR}
   popd
 
   #

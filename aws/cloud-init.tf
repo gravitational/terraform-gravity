@@ -53,6 +53,7 @@ data "template_file" "master" {
     ops_url              = var.ops_url
     ops_token            = var.ops_token
     flavor               = var.flavor
+    pod_cidr             = var.pod_cidr
     master_role          = var.master_role
     worker_role          = var.worker_role
     ops_advertise_addr   = var.ops_advertise_addr

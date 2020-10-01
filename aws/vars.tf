@@ -133,6 +133,11 @@ variable "ops_advertise_addr" {
   default     = ""
 }
 
+variable "pod_cidr" {
+  description = "Kubernetes pod network CIDR range to pass to the installer"
+  default     = ""
+}
+
 variable "aws_hosted_zone_name" {
   description = "Temporary: the name of the route53 zone to add DNS records to for this cluster"
   default     = ""

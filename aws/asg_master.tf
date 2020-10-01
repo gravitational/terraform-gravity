@@ -52,9 +52,9 @@ resource "aws_launch_configuration" "master" {
   ebs_block_device {
     delete_on_termination = true
     volume_type           = "io1"
-    volume_size           = "500"
+    volume_size           = var.master_ebs_gravity_volume_size
     device_name           = "/dev/xvdb"
-    iops                  = 1500
+    iops                  = var.master_ebs_gravity_iops
     encrypted             = var.ebs_encryption
   }
 
@@ -62,9 +62,9 @@ resource "aws_launch_configuration" "master" {
   ebs_block_device {
     delete_on_termination = true
     volume_type           = "io1"
-    volume_size           = "100"
+    volume_size           = var.master_ebs_etcd_volume_size
     device_name           = "/dev/xvdc"
-    iops                  = 1500
+    iops                  = var.master_ebs_etcd_iops
     encrypted             = var.ebs_encryption
   }
 
@@ -80,4 +80,3 @@ resource "aws_iam_instance_profile" "master" {
   name = "${var.name}-master"
   role = aws_iam_role.master.name
 }
-

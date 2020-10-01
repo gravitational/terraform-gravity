@@ -67,6 +67,26 @@ variable "ebs_encryption" {
   default     = false
 }
 
+variable "master_ebs_gravity_volume_size" {
+  description = "The size of /var/lib/gravity on master nodes in gigabytes"
+  default     = 500
+}
+
+variable "master_ebs_gravity_iops" {
+  description = "The amount of provisioned IOPS for /var/lib/gravity on master nodes"
+  default     = 1500
+}
+
+variable "master_ebs_etcd_volume_size" {
+  description = "The size of /var/lib/gravity/planet/etcd on master nodes in gigabytes"
+  default     = 100
+}
+
+variable "master_ebs_etcd_iops" {
+  description = "The amount of provisioned IOPS for /var/lib/gravity/planet/etcd on master nodes"
+  default     = 1500
+}
+
 variable "worker_ebs_volume_size" {
   description = "The size of /var/lib/gravity on worker nodes in gigabytes"
   default     = 500

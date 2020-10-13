@@ -99,7 +99,7 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
 
   ADVERTISE=""
   if [ ! -z "${ops_advertise_addr}" ]; then
-    ADVERTISE="--ops-advertise-addr=${ops_advertise_addr}"
+    ADVERTISE="--ops-advertise-addr=${ops_advertise_addr}:443"
   fi
 
   TRUSTED_CLUSTER_TOKEN=`aws ssm get-parameter --name /telekube/${cluster_name}/config/trusted-cluster-token --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
@@ -228,6 +228,7 @@ EOF
     # certs and store them in k8s, but for now, we'll just provision / renew on the installer node
     #
     # TODO(knisbet) automatic renewal and import into telekube
+    yum -y install python3
     yum -y install epel-release
     yum -y install certbot
 
@@ -235,11 +236,11 @@ EOF
     yum -y install python-virtualenv
     mkdir -p /root/virtualenv
     cd /root/virtualenv
-    virtualenv --no-site-packages -p /usr/bin/python2.7 certbot
+    virtualenv --no-site-packages -p /usr/bin/python3 certbot
     . /root/virtualenv/certbot/bin/activate
     pip install certbot certbot-dns-route53
     deactivate
-    /root/virtualenv/certbot/bin/certbot certonly -n --agree-tos --email ${email} --dns-route53 -d ${cluster_name}
+    /root/virtualenv/certbot/bin/certbot certonly -n --agree-tos --email ${email} --dns-route53 -d ${ops_advertise_addr}
     cd
 
     cat <<EOF > keypair.yaml
@@ -250,13 +251,13 @@ metadata:
 spec:
   private_key: |
 EOF
-    cat /etc/letsencrypt/live/${cluster_name}/privkey.pem | sed 's/^/    /' >> keypair.yaml
+    cat /etc/letsencrypt/live/${ops_advertise_addr}/privkey.pem | sed 's/^/    /' >> keypair.yaml
     echo "  cert: |" >> keypair.yaml
-    cat /etc/letsencrypt/live/${cluster_name}/fullchain.pem | sed 's/^/    /' >> keypair.yaml
+    cat /etc/letsencrypt/live/${ops_advertise_addr}/fullchain.pem | sed 's/^/    /' >> keypair.yaml
     gravity resource create keypair.yaml
     rm keypair.yaml
 
-    until [ ! -z "$$elb_dns_name" ]; do
+    until [ ! -z "$${elb_dns_name}" ]; do
       sleep 5
       elb_dns_name=$(sudo gravity enter -- --notty /usr/bin/kubectl -- --namespace=kube-system get svc/gravity-public -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
     done
@@ -275,12 +276,12 @@ EOF
                         "EvaluateTargetHealth": false,
                         "HostedZoneId": "$${alias_zone_id}"
                     },
-                    "Name": "${cluster_name}",
+                    "Name": "${ops_advertise_addr}",
                     "Type": "A"
                 }
             }
         ],
-        "Comment": "Add DNS record for ${cluster_name}"
+        "Comment": "Add DNS record for ${ops_advertise_addr}"
     }
 EOF
     )
@@ -294,16 +295,16 @@ EOF
                 "Action": "UPSERT",
                 "ResourceRecordSet": {
                     "AliasTarget": {
-                        "DNSName": "${cluster_name}",
+                        "DNSName": "${ops_advertise_addr}",
                         "EvaluateTargetHealth": false,
                         "HostedZoneId": "$${hosted_zone_id}"
                     },
-                    "Name": "*.${cluster_name}",
+                    "Name": "*.${ops_advertise_addr}",
                     "Type": "A"
                 }
             }
         ],
-        "Comment": "Add DNS record for *.${cluster_name}"
+        "Comment": "Add DNS record for *.${ops_advertise_addr}"
     }
 EOF
     )
@@ -317,7 +318,7 @@ EOF
     until [ "$${status}" != "PENDING" ]; do
       sleep 5
       status=$(aws route53 get-change --id "$${change_id}" --query 'Changinfo.Status' --output text)
-      echo "Route53 ALIAS status for ${cluster_name}: $${status}"
+      echo "Route53 ALIAS status for ${ops_advertise_addr}: $${status}"
     done
     echo "DNS record creation completed"
 

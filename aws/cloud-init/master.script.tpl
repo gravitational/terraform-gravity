@@ -189,32 +189,6 @@ EOF
   fi
 
 
-  # Provisioning of a SAML identity provider.
-  SAML_NAME=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/name --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
-  SAML_ADMIN_GROUP=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/admin-group --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
-  SAML_ENTITY_DESCRIPTOR=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/entity-descriptor --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
-  if [ ! -z "$${SAML_ENTITY_DESCRIPTOR}" ]; then
-    cat <<EOF > saml.yaml
-kind: saml
-version: v2
-metadata:
-  name: sso
-spec:
-  acs: https://${cluster_name}/portalapi/v1/saml/callback
-  attributes_to_roles:
-  - name: groups
-    value: $${SAML_ADMIN_GROUP}
-    roles:
-    - '@teleadmin'
-  display: $${SAML_NAME}
-  entity_descriptor: |
-EOF
-    # This needs to be properly indented, hence the sed command
-    printf "$${SAML_ENTITY_DESCRIPTOR}" | sed 's/^/\ \ \ \ /' >> saml.yaml
-    gravity resource create saml.yaml
-    rm saml.yaml
-  fi
-
   #
   # Only if an opscenter with public access enabled, try to provision DNS / letsencrypt
   # TODO(knisbet) this should be offloaded to an automatic DNS service loaded in k8s / the app
@@ -321,6 +295,32 @@ EOF
       echo "Route53 ALIAS status for ${ops_advertise_addr}: $${status}"
     done
     echo "DNS record creation completed"
+
+    # Provisioning of a SAML identity provider.
+    SAML_NAME=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/name --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+    SAML_ADMIN_GROUP=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/admin-group --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+    SAML_ENTITY_DESCRIPTOR=`aws ssm get-parameter --name /telekube/${cluster_name}/saml/entity-descriptor --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+    if [ ! -z "$${SAML_ENTITY_DESCRIPTOR}" ]; then
+      cat <<EOF > saml.yaml
+kind: saml
+version: v2
+metadata:
+  name: sso
+spec:
+  acs: https://${ops_advertise_addr}/portalapi/v1/saml/callback
+  attributes_to_roles:
+  - name: groups
+    value: $${SAML_ADMIN_GROUP}
+    roles:
+    - '@teleadmin'
+  display: $${SAML_NAME}
+  entity_descriptor: |
+EOF
+      # This needs to be properly indented, hence the sed command
+      printf "$${SAML_ENTITY_DESCRIPTOR}" | sed 's/^/\ \ \ \ /' >> saml.yaml
+      gravity resource create saml.yaml
+      rm saml.yaml
+    fi
 
   fi
 

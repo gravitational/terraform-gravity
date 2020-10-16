@@ -97,11 +97,6 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
     /usr/local/bin/tele pull -o /tmp/installer.tar ${source}
   fi
 
-  ADVERTISE=""
-  if [ ! -z "${ops_advertise_addr}" ]; then
-    ADVERTISE="--ops-advertise-addr=${ops_advertise_addr}:443"
-  fi
-
   TRUSTED_CLUSTER_TOKEN=`aws ssm get-parameter --name /telekube/${cluster_name}/config/trusted-cluster-token --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
   if [ ! -z "$${TRUSTED_CLUSTER_TOKEN}" ]; then
     PROVISION_TRUSTED_CLUSTER="--ops-tunnel-token $${TRUSTED_CLUSTER_TOKEN}"
@@ -120,7 +115,7 @@ if [ "$${INSTALL_LEADER}" = "$${EC2_INSTANCE_ID}" ] && [ ! -f /tmp/gravity ]; th
   mkdir -p /tmp/gravity
   tar -xvf /tmp/installer.tar -C /tmp/gravity
   pushd /tmp/gravity
-  ./gravity install --cloud-provider=aws --cluster ${cluster_name} $${FLAVOR} --role ${master_role} $${PROVISION_TRUSTED_CLUSTER} $${ADVERTISE} $${POD_CIDR}
+  ./gravity install --cloud-provider=aws --cluster ${cluster_name} $${FLAVOR} --role ${master_role} $${PROVISION_TRUSTED_CLUSTER} $${POD_CIDR}
   popd
 
   #
@@ -189,14 +184,42 @@ EOF
   fi
 
 
-  #
   # Only if an opscenter with public access enabled, try to provision DNS / letsencrypt
   # TODO(knisbet) this should be offloaded to an automatic DNS service loaded in k8s / the app
   # But temporarily we'll provision from cloud-init script
-  #
-  # IF the cluster has the gravity-public svc, it must be an externally facing ops center
-  if gravity enter -- --notty /usr/bin/kubectl -- --namespace=kube-system get svc/gravity-public; then
-    #
+  if [ ! -z "${ops_advertise_addr}" ]; then
+    # TODO(pierrebeaucamp) this assumes that we're using SAML to authenticate
+    gravity resource create <<EOF
+kind: authgateway
+version: v1
+spec:
+  authentication:
+    type: saml
+    second_factor: off
+    connector_name: $${SAML_NAME}
+  public_addr:
+  - $${ops_advertise_addr}
+EOF
+
+    # Manually create a service for OpsCenter, since newer verions of Gravity enable Hub if we enable the
+    # gravity-public service over the installation flag.
+    cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+  name: gravity-public
+  namespace: kube-system
+spec:
+  type: LoadBalancer
+  selector:
+    app: gravity-site
+  ports:
+  - name: web
+    port: 443
+    targetPort: 3009
+EOF
     # Use letsencrypt to get a cert for this domain
     # TODO(knisbet) we should really be using a kubernetes project for this, that will automatically renew
     # certs and store them in k8s, but for now, we'll just provision / renew on the installer node

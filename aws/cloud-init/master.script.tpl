@@ -188,19 +188,6 @@ EOF
   # TODO(knisbet) this should be offloaded to an automatic DNS service loaded in k8s / the app
   # But temporarily we'll provision from cloud-init script
   if [ ! -z "${ops_advertise_addr}" ]; then
-    # TODO(pierrebeaucamp) this assumes that we're using SAML to authenticate
-    gravity resource create <<EOF
-kind: authgateway
-version: v1
-spec:
-  authentication:
-    type: saml
-    second_factor: off
-    connector_name: $${SAML_NAME}
-  public_addr:
-  - $${ops_advertise_addr}
-EOF
-
     # Manually create a service for OpsCenter, since newer verions of Gravity enable Hub if we enable the
     # gravity-public service over the installation flag.
     cat <<EOF | kubectl apply -f -
@@ -343,8 +330,48 @@ EOF
       printf "$${SAML_ENTITY_DESCRIPTOR}" | sed 's/^/\ \ \ \ /' >> saml.yaml
       gravity resource create saml.yaml
       rm saml.yaml
-    fi
 
+      gravity resource create <<EOF
+kind: authgateway
+version: v1
+spec:
+  authentication:
+    type: saml
+    second_factor: "off"
+    connector_name: $${SAML_NAME}
+  public_addr:
+  - ${ops_advertise_addr}
+EOF
+    fi
+  fi
+
+
+  ALERT_RECIPIENT=`aws ssm get-parameter --name /telekube/${cluster_name}/alert/recipient --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  ALERT_SMTP_HOST=`aws ssm get-parameter --name /telekube/${cluster_name}/alert/smtp-host --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  ALERT_SMTP_PORT=`aws ssm get-parameter --name /telekube/${cluster_name}/alert/smtp-port --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  ALERT_SMTP_USER=`aws ssm get-parameter --name /telekube/${cluster_name}/alert/smtp-user --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  ALERT_SMTP_PASS=`aws ssm get-parameter --name /telekube/${cluster_name}/alert/smtp-pass --region $EC2_REGION --query 'Parameter.Value' --output text --with-decryption`
+  if [ ! -z "$${ALERT_SMTP_HOST}" ]; then
+    gravity resource create <<EOF
+kind: smtp
+version: v2
+metadata:
+  name: smtp
+spec:
+  host: $${ALERT_SMTP_HOST}
+  port: $${ALERT_SMTP_PORT}
+  username: $${ALERT_SMTP_USER}
+  password: $${ALERT_SMTP_PASS}
+EOF
+
+    gravity resource create <<EOF
+kind: alerttarget
+version: v2
+metadata:
+  name: email-alerts
+spec:
+  email: $${ALERT_RECIPIENT}
+EOF
   fi
 
 #

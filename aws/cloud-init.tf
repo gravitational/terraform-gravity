@@ -71,6 +71,13 @@ data "template_file" "master" {
     saml_name              = var.saml_name
     saml_admin_group       = var.saml_admin_group
     saml_entity_descriptor = var.saml_entity_descriptor
+
+    // Email alerts
+    alert_recipient = var.alert_recipient
+    alert_smtp_host = var.alert_smtp_host
+    alert_smtp_port = var.alert_smtp_port
+    alert_smtp_user = var.alert_smtp_user
+    alert_smtp_pass = var.alert_smtp_pass
   }
 }
 

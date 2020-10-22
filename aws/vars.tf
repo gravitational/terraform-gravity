@@ -211,7 +211,7 @@ variable "oidc_issuer_url" {
 }
 
 //
-// SAML variables for configuraing an identity provider on install
+// SAML variables for configuring an identity provider on install
 //
 variable "saml_name" {
   description = "The display name of this SAML identity provider"
@@ -225,6 +225,34 @@ variable "saml_admin_group" {
 
 variable "saml_entity_descriptor" {
   description = "The SAML IdP metadata in XML format"
+  default     = ""
+}
+
+//
+// SMTP variables for configuring email alerts
+//
+variable "alert_recipient" {
+  description = "The recipient of an email alert"
+  default     = ""
+}
+
+variable "alert_smtp_host" {
+  description = "The SMTP host for sending email alerts"
+  default     = ""
+}
+
+variable "alert_smtp_port" {
+  description = "The SMTP port for sending email alerts"
+  default     = "25"
+}
+
+variable "alert_smtp_user" {
+  description = "The SMTP username for sending email alerts"
+  default     = ""
+}
+
+variable "alert_smtp_pass" {
+  description = "The SMTP password for sending email alerts"
   default     = ""
 }
 

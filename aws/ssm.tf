@@ -122,3 +122,56 @@ resource "aws_ssm_parameter" "saml_entity_descriptor" {
   overwrite   = true
   tags        = local.merged_tags
 }
+
+//
+// Store SMTP / Alerting variables in the SSM parameter store encrypted
+//
+resource "aws_ssm_parameter" "alert_recipient" {
+  count       = var.alert_recipient != "" ? 1 : 0
+  name        = "/telekube/${var.name}/alert/recipient"
+  description = ""
+  type        = "SecureString"
+  value       = var.alert_recipient
+  overwrite   = true
+  tags        = local.merged_tags
+}
+
+resource "aws_ssm_parameter" "alert_smtp_host" {
+  count       = var.alert_smtp_host != "" ? 1 : 0
+  name        = "/telekube/${var.name}/alert/smtp-host"
+  description = ""
+  type        = "SecureString"
+  value       = var.alert_smtp_host
+  overwrite   = true
+  tags        = local.merged_tags
+}
+
+resource "aws_ssm_parameter" "alert_smtp_port" {
+  count       = var.alert_smtp_port != "" ? 1 : 0
+  name        = "/telekube/${var.name}/alert/smtp-port"
+  description = ""
+  type        = "SecureString"
+  value       = var.alert_smtp_port
+  overwrite   = true
+  tags        = local.merged_tags
+}
+
+resource "aws_ssm_parameter" "alert_smtp_user" {
+  count       = var.alert_smtp_user != "" ? 1 : 0
+  name        = "/telekube/${var.name}/alert/smtp-user"
+  description = ""
+  type        = "SecureString"
+  value       = var.alert_smtp_user
+  overwrite   = true
+  tags        = local.merged_tags
+}
+
+resource "aws_ssm_parameter" "alert_smtp_pass" {
+  count       = var.alert_smtp_pass != "" ? 1 : 0
+  name        = "/telekube/${var.name}/alert/smtp-pass"
+  description = ""
+  type        = "SecureString"
+  value       = var.alert_smtp_pass
+  overwrite   = true
+  tags        = local.merged_tags
+}
